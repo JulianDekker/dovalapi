@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from bokeh.layouts import widgetbox
-from bokeh.models import ColumnDataSource, FactorRange
+from bokeh.models import ColumnDataSource, FactorRange, HoverTool
 from bokeh.plotting import figure
 
 
@@ -28,11 +28,18 @@ class BokehResources:
         return data_table
 
     def explore_data_vis(self, dataframe):
+        '''
+        Generates 1D bar chart visualisations for every element in the provided pandas dataframe.
+        :param dataframe:
+        :return: a list of 4 length lists of plots.
+        '''
         charts = []
         count = 0
         subplotbox = []
+        dataframe = dataframe.dropna(how='all', axis=1)
+        #print(dataframe)
         headers, _ = self.df_rowinfo(dataframe)
-        TOOLS = 'save,hover,pan,reset,wheel_zoom,zoom_in,zoom_out,box_zoom'
+        TOOLS = 'save,pan,reset,wheel_zoom,zoom_in,zoom_out,box_zoom'
         for header in headers:
             if dataframe[header].dtype == 'object' or dataframe[header].dtype == bool:  # String data
                 counts = dataframe[header].value_counts()
@@ -47,6 +54,7 @@ class BokehResources:
                 p.x_range.range_padding = 0.1
                 p.xaxis.major_label_orientation = 1
                 p.xgrid.grid_line_color = None
+                p.add_tools(self.default_hovertool(header, 'x', 'Occurrences', 'counts'))
                 if count < 4:
                     subplotbox.append(p)
                 else:
@@ -63,14 +71,15 @@ class BokehResources:
                 distribution = gsort.describe()['count']
                 x = [str(g) for g in distribution.keys()]
                 countnum = [num for num in distribution]
-                source = ColumnDataSource(data=dict(X=x, counts=countnum))
+                source = ColumnDataSource(data=dict(x=x, counts=countnum))
                 p1 = figure(title="Distribution for {}".format(header), tools=TOOLS, x_range=FactorRange(*x))
                 p1.yaxis.axis_label = "Occurrences"
-                p1.vbar(x='X', top='counts', width=0.9, source=source)
+                p1.vbar(x='x', top='counts', width=0.9, source=source)
                 p1.y_range.start = 0
                 p1.x_range.range_padding = 0.1
                 p1.xaxis.major_label_orientation = 1
                 p1.xgrid.grid_line_color = None
+                p1.add_tools(self.default_hovertool(header, 'x', 'Occurrences', 'counts'))
                 if count < 4:
                     subplotbox.append(p1)
                 else:
@@ -112,11 +121,30 @@ class BokehResources:
         from bokeh.resources import INLINE
         return INLINE.render()
 
+    def default_hovertool(self, x1, x2, y1, y2):
+        '''
+        Creates the default hovertool for plots
+        :param x1: first string
+        :param x2: first reference
+        :param y1: second string
+        :param y2: second reference
+        :return: hovertool
+        '''
+        hover = HoverTool(
+            tooltips=[
+                (x1+' ', '@'+x2),
+                (y1+' ', '@'+y2),
+            ],
+            mode='vline'
+        )
+        return hover
+
     @staticmethod
     def df_rowinfo(dataframe):
         '''
         Reads the headers / columns of any dataframe and returns the header and columns.
         '''
         headers = list(dataframe.columns)
+        #print(headers)
         columns = list(dataframe.set_index(headers[0]).index)
         return headers, columns
