@@ -3,7 +3,7 @@ import numpy as np
 from bokeh.layouts import widgetbox
 from bokeh.models import ColumnDataSource, FactorRange, HoverTool
 from bokeh.plotting import figure
-
+import dovalapi
 
 class BokehResources:
 
@@ -37,7 +37,6 @@ class BokehResources:
         count = 0
         subplotbox = []
         dataframe = dataframe.dropna(how='all', axis=1)
-        #print(dataframe)
         headers, _ = self.df_rowinfo(dataframe)
         TOOLS = 'save,pan,reset,wheel_zoom,zoom_in,zoom_out,box_zoom'
         for header in headers:
@@ -89,6 +88,78 @@ class BokehResources:
                 count += 1
         charts.append(subplotbox)
         return charts
+
+    def make_boxplot(self, quant1, quant2, quant3, upper, lower, outx, outy):
+        xranges = quant2.index.tolist()
+        p = figure(background_fill_color="#efefef", x_range=xranges, toolbar_location='above')
+        p.segment(xranges, upper.score, xranges, quant3.score, line_color="black")
+        p.segment(xranges, lower.score, xranges, quant1.score, line_color="black")
+        p.vbar(xranges, 0.7, quant2.score, quant3.score, fill_color="#E08E79", line_color="black")
+        p.vbar(xranges, 0.7, quant1.score, quant2.score, fill_color="#3B8686", line_color="black")
+        p.rect(xranges, lower.score, 0.2, 0.01, line_color="black")
+        p.rect(xranges, upper.score, 0.2, 0.01, line_color="black")
+        if len(outx) > 0:
+            p.circle(outx, outy, size=6, color="#F38630", fill_alpha=0.6)
+        p.xaxis.major_label_orientation = 1
+        return p
+
+    def pivotboxplot(self, dataframe, features):
+        print(len(features))
+        if len(features) > 3:
+            print('test pivotboxplot')
+            print('pivot', features)
+            du = dovalapi.utils()
+            pivottable = du.pivottable(dataframe, features)
+            print(pivottable)
+            q1 = pivottable['quant1']
+            q2 = pivottable['median']
+            q3 = pivottable['quant3']
+            iqr = q3 - q1
+            upper = q3 + 1.5 * iqr
+            lower = q1 - 1.5 * iqr
+
+            downoutliers = []
+            upoutliers = []
+            lowerdf = pd.DataFrame()
+            upperdf = pd.DataFrame()
+            quant3 = pd.DataFrame()
+            quant2 = pd.DataFrame()
+            quant1 = pd.DataFrame()
+
+            outx = []
+            outy = []
+
+            smallerdf = dataframe[features]
+
+            for clas in lower:
+                for index in lower.index:
+                    data6 = smallerdf[smallerdf[features[1]] == clas]
+                    data7 = lower[clas]
+                    for i in range(len(index)):
+                        data6 = data6[data6[features[i + 2]] == index[i]]
+                    lowerdf = lowerdf.append(pd.Series({'score': data7.loc[index]}, name='{} {}'.format(clas, index)))
+                    quant3 = quant3.append(pd.Series({'score': q3[clas].loc[index]}, name='{} {}'.format(clas, index)))
+                    quant2 = quant2.append(pd.Series({'score': q2[clas].loc[index]}, name='{} {}'.format(clas, index)))
+                    quant1 = quant1.append(pd.Series({'score': q1[clas].loc[index]}, name='{} {}'.format(clas, index)))
+                    downoutliers.append(data6[features[0]].where(data6[features[0]] < data7.loc[index]).dropna())
+                    if len(data6[features[0]].where(data6[features[0]] < data7.loc[index]).dropna()) > 0:
+                        for key in data6[features[0]].where(data6[features[0]] < data7.loc[index]).dropna():
+                            outx.append('{} {}'.format(clas, index))
+                            outy.append(key)
+            for clas in upper:
+                for index in upper.index:
+                    data6 = smallerdf[smallerdf[features[1]] == clas]
+                    data7 = upper[clas]
+                    for i in range(len(index)):
+                        data6 = data6[data6[features[i + 2]] == index[i]]
+                    upperdf = upperdf.append(pd.Series({'score': data7.loc[index]}, name='{} {}'.format(clas, index)))
+                    upoutliers.append(data6[features[0]].where(data6[features[0]] > data7.loc[index]).dropna())
+                    if len(data6[features[0]].where(data6[features[0]] > data7.loc[index]).dropna()) > 0:
+                        for key in data6[features[0]].where(data6[features[0]] > data7.loc[index]).dropna():
+                            outx.append('{} {}'.format(clas, index))
+                            outy.append(key)
+            return self.make_boxplot(quant1, quant2, quant3, upperdf, lowerdf, outx, outy)
+        return figure(background_fill_color="#efefef", toolbar_location='above')
 
     def get_headers(self):
         return self.headers

@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='dovalapi',
-      version='0.8.8',
+      version='1.0',
       description='Doval methods and tools',
       url='',
       author='Julian Dekker',
