@@ -103,14 +103,10 @@ class BokehResources:
         p.xaxis.major_label_orientation = 1
         return p
 
-    def pivotboxplot(self, dataframe, features):
-        print(len(features))
-        if len(features) > 3:
-            print('test pivotboxplot')
-            print('pivot', features)
+    def pivotboxplot(self, dataframe, features, rettable=False):
+        if len(features) > 1:
             du = dovalapi.utils()
             pivottable = du.pivottable(dataframe, features)
-            print(pivottable)
             q1 = pivottable['quant1']
             q2 = pivottable['median']
             q3 = pivottable['quant3']
@@ -136,7 +132,10 @@ class BokehResources:
                     data6 = smallerdf[smallerdf[features[1]] == clas]
                     data7 = lower[clas]
                     for i in range(len(index)):
-                        data6 = data6[data6[features[i + 2]] == index[i]]
+                        if len(features) > 3:
+                            data6 = data6[data6[features[i + 2]] == index[i]]
+                        elif len(features) > 2:
+                            data6 = data6[data6[features[2]] == index]
                     lowerdf = lowerdf.append(pd.Series({'score': data7.loc[index]}, name='{} {}'.format(clas, index)))
                     quant3 = quant3.append(pd.Series({'score': q3[clas].loc[index]}, name='{} {}'.format(clas, index)))
                     quant2 = quant2.append(pd.Series({'score': q2[clas].loc[index]}, name='{} {}'.format(clas, index)))
@@ -151,13 +150,18 @@ class BokehResources:
                     data6 = smallerdf[smallerdf[features[1]] == clas]
                     data7 = upper[clas]
                     for i in range(len(index)):
-                        data6 = data6[data6[features[i + 2]] == index[i]]
+                        if len(features) > 3:
+                            data6 = data6[data6[features[i + 2]] == index[i]]
+                        elif len(features) > 2:
+                            data6 = data6[data6[features[2]] == index]
                     upperdf = upperdf.append(pd.Series({'score': data7.loc[index]}, name='{} {}'.format(clas, index)))
                     upoutliers.append(data6[features[0]].where(data6[features[0]] > data7.loc[index]).dropna())
                     if len(data6[features[0]].where(data6[features[0]] > data7.loc[index]).dropna()) > 0:
                         for key in data6[features[0]].where(data6[features[0]] > data7.loc[index]).dropna():
                             outx.append('{} {}'.format(clas, index))
                             outy.append(key)
+            if rettable is True:
+                return self.make_boxplot(quant1, quant2, quant3, upperdf, lowerdf, outx, outy), pivottable
             return self.make_boxplot(quant1, quant2, quant3, upperdf, lowerdf, outx, outy)
         return figure(background_fill_color="#efefef", toolbar_location='above')
 

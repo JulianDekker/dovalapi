@@ -40,10 +40,14 @@ class utils:
             bins = 10
         getcontext().prec = 4
         bins = pd.cut(dataframe[column], bins=bins, retbins=True)
-        dataframe[column + '_cat'] = bins[0]
+
+        def catstring(interval):
+            string = str(column) + ' ' + str(interval.left) + '-' + str(interval.right)
+            return string
+        dataframe[column + '_cat'] = bins[0].apply(catstring)
         return dataframe
 
-    def pivottable(self, dataframe, features, aggfun=[], delna=False, retoutliers=False):
+    def pivottable(self, dataframe, features, aggfun=[], delna=False):
         '''
         Generates a pivot-table from a provided list of features, first value is the measured value.
         :param dataframe:
@@ -94,6 +98,4 @@ class utils:
             rest = pd.Series(features)[2:].tolist()
         pivottable = pd.pivot_table(dataframe, values=features[0], columns=features[1], index=rest, dropna=delna,
                                     aggfunc=aggfun)
-        if retoutliers is True:
-            return pivottable, outliers
         return pivottable
