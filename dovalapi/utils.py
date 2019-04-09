@@ -99,3 +99,95 @@ class utils:
         pivottable = pd.pivot_table(dataframe, values=features[0], columns=features[1], index=rest, dropna=delna,
                                     aggfunc=aggfun)
         return pivottable
+
+    def hierarchical_pivottable(self, dataframe, features):
+        """
+        Creates a hierarchical pivot table html strucuture. Recursively calculates the amounts of datapoints in each level
+        of pivot.
+        :param dataframe:
+        :param features:
+        :return:
+        """
+        df = dataframe[features]
+        agg = df.groupby(features[1:]).agg('count')
+        index = agg.index
+        grouplen = len(df)
+        html = []
+
+        #for i, feature in enumerate(features):
+        #    if (dataframe[feature].dtype == 'int64' or dataframe[feature].dtype == 'float64') and i > 0:
+        #        dataframe = self.categorise_intdata(dataframe, feature)
+        #        features[i] += '_cat'
+
+        def get_next_ind(level):
+            for i, _ in enumerate(index.levels):
+                if index.levels[i] is level:
+                    ind = i
+                    if (ind < len(index.levels)):
+                        try:
+                            return index.levels[ind + 1]
+                        except IndexError:
+                            return None
+            return None
+
+        def calc_level(level, start=True, levelindex=()):
+            total = 0
+            group = []
+            levelindexes = []
+            for i in level:
+                levelsindex = levelindex + (i,)
+                levelindexes.append(levelsindex)
+                group.append(i)
+                if len(features) > 2:
+                    try:
+                        total += agg[features[0]][levelsindex].sum()
+                    except:
+                        continue
+                else:
+                    total += agg[features[0]][i]
+            html.append("<div class='cat-group'><div class='group-title'>" + level.name + "</div>")
+            for levelindex, item in enumerate(group):
+                if len(features) > 2:
+                    try:
+                        html.append("<div class='group-item'><div class='group-left'>" + item + "</div><div class='group-right'>" + str(
+                            agg[features[0]][levelindexes[levelindex]].sum()) + "</div></div>")
+                    except:
+                        html.append(
+                            "<div class='group-item'><div class='group-left'>" + item + "</div><div class='group-right'>" + str(
+                                0) + "</div></div>")
+                    ind = get_next_ind(level)
+                    if (ind is not None):
+                        try:
+                            calc_level(ind, start=False, levelindex=levelindexes[levelindex])
+                        except IndexError:
+                            continue
+                else:
+                    html.append(
+                        "<div class='group-item'><div class='group-left'>" + item + "</div><div class='group-right'>" + str(
+                            agg[features[0]][group[levelindex]].sum()) + "</div></div>")
+            unset = grouplen - total
+            if start:
+                html.append("<div class='group-item'><div class='group-left'>No Value</div><div class='group-right'>" + str(unset) + "</div></div></div>")
+            else:
+                html.append('</div>')
+
+        if len(features) == 2:
+            calc_level(index)
+        else:
+            calc_level(index.levels[0])
+
+        return ''.join(html)
+
+    @staticmethod
+    def limitedsubselect(features, limit=4):
+        selections = []
+        if len(features) > limit:
+            print('in', features)
+            for i in range(len(features) - limit):
+                feat = features[0:3]
+                feat.append(features[limit+i])
+                print('what happend?', feat)
+                selections.append(feat)
+            return selections
+        print('We need to go deeper!', features)
+        return [features]

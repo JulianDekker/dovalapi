@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
 from bokeh.layouts import widgetbox
-from bokeh.models import ColumnDataSource, FactorRange, HoverTool
+from bokeh.models import ColumnDataSource, FactorRange, HoverTool, LinearColorMapper
 from bokeh.plotting import figure
+from bokeh.palettes import Paired
 import dovalapi
+
 
 class BokehResources:
 
@@ -89,18 +91,27 @@ class BokehResources:
         charts.append(subplotbox)
         return charts
 
-    def make_boxplot(self, quant1, quant2, quant3, upper, lower, outx, outy):
+    def colorgen(self, colors):
+        num = 0
+        while num < len(colors):
+            color = colors[num]
+            print(color)
+            yield color
+            num = num + 1
+
+    def make_boxplot(self, quant1, quant2, quant3, upper, lower, outx, outy, colors):
         xranges = quant2.index.tolist()
         p = figure(background_fill_color="#efefef", x_range=xranges, toolbar_location='above')
         p.segment(xranges, upper.score, xranges, quant3.score, line_color="black")
         p.segment(xranges, lower.score, xranges, quant1.score, line_color="black")
-        p.vbar(xranges, 0.7, quant2.score, quant3.score, fill_color="#E08E79", line_color="black")
-        p.vbar(xranges, 0.7, quant1.score, quant2.score, fill_color="#3B8686", line_color="black")
+        p.vbar(xranges, 0.7, quant2.score, quant3.score, fill_color=colors.topcolor, line_color="black")
+        p.vbar(xranges, 0.7, quant1.score, quant2.score, fill_color=colors.botcolor, line_color="black")
         p.rect(xranges, lower.score, 0.2, 0.01, line_color="black")
         p.rect(xranges, upper.score, 0.2, 0.01, line_color="black")
         if len(outx) > 0:
-            p.circle(outx, outy, size=6, color="#F38630", fill_alpha=0.6)
+            p.circle(outx, outy, size=6, color='#9ecae1', fill_alpha=0.6)
         p.xaxis.major_label_orientation = 1
+        p.legend.location = 'top_right'
         return p
 
     def pivotboxplot(self, dataframe, features, rettable=False):
@@ -121,14 +132,14 @@ class BokehResources:
             quant3 = pd.DataFrame()
             quant2 = pd.DataFrame()
             quant1 = pd.DataFrame()
-
+            colors = pd.DataFrame()
             outx = []
             outy = []
 
             smallerdf = dataframe[features]
 
-            for clas in lower:
-                for index in lower.index:
+            for iclas, clas in enumerate(lower):
+                for iindex, index in enumerate(lower.index):
                     data6 = smallerdf[smallerdf[features[1]] == clas]
                     data7 = lower[clas]
                     for i in range(len(index)):
@@ -136,10 +147,17 @@ class BokehResources:
                             data6 = data6[data6[features[i + 2]] == index[i]]
                         elif len(features) > 2:
                             data6 = data6[data6[features[2]] == index]
+                    if iclas > 11:
+                        iclas = iclas % 11
+                    iindex = iindex + len(lower)+1
+                    if iindex > 11:
+                        iindex = iindex % 11
+                    print(iindex, iclas, len(lower))
                     lowerdf = lowerdf.append(pd.Series({'score': data7.loc[index]}, name='{} {}'.format(clas, index)))
                     quant3 = quant3.append(pd.Series({'score': q3[clas].loc[index]}, name='{} {}'.format(clas, index)))
                     quant2 = quant2.append(pd.Series({'score': q2[clas].loc[index]}, name='{} {}'.format(clas, index)))
                     quant1 = quant1.append(pd.Series({'score': q1[clas].loc[index]}, name='{} {}'.format(clas, index)))
+                    colors = colors.append(pd.Series({'topcolor': Paired[12][iindex], 'botcolor': Paired[12][iclas]}, name='{} {}'.format(clas, index)))
                     downoutliers.append(data6[features[0]].where(data6[features[0]] < data7.loc[index]).dropna())
                     if len(data6[features[0]].where(data6[features[0]] < data7.loc[index]).dropna()) > 0:
                         for key in data6[features[0]].where(data6[features[0]] < data7.loc[index]).dropna():
@@ -161,9 +179,19 @@ class BokehResources:
                             outx.append('{} {}'.format(clas, index))
                             outy.append(key)
             if rettable is True:
-                return self.make_boxplot(quant1, quant2, quant3, upperdf, lowerdf, outx, outy), pivottable
-            return self.make_boxplot(quant1, quant2, quant3, upperdf, lowerdf, outx, outy)
+                return self.make_boxplot(quant1, quant2, quant3, upperdf, lowerdf, outx, outy, colors), pivottable
+            return self.make_boxplot(quant1, quant2, quant3, upperdf, lowerdf, outx, outy, colors)
         return figure(background_fill_color="#efefef", toolbar_location='above')
+
+    def multi_pivotboxplot(self, dataframe, features):
+        boxplots = []
+        if len(features) > 0:
+            du = dovalapi.utils()
+            print('features inside: ', du.limitedsubselect(features))
+            for feature in du.limitedsubselect(features):
+                boxplots.append(self.pivotboxplot(dataframe, feature))
+            print('boxplots: ', boxplots)
+        return boxplots
 
     def get_headers(self):
         return self.headers
