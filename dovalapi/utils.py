@@ -4,6 +4,17 @@ import numpy as np
 from decimal import *
 
 
+class NAN(object):
+    def __eq__(self, v):
+        return np.isnan(v)
+
+    def __hash__(self):
+        return hash(np.nan)
+
+    def __repr__(self):
+        return 'NaN'
+
+
 class utils:
 
     def __init__(self):
@@ -24,7 +35,37 @@ class utils:
             return ','
         elif re.search('(.+ .+)+', first_line):
             return '\\s'
+        elif re.search('(.+;.+)+', first_line):
+            return ';'
         return None
+
+    @staticmethod
+    def get_nominal_values(dataframe, feature):
+        '''
+        lists the unique values of a feature in the dataframe.
+        '''
+        return df[feature].unique()
+
+    @staticmethod
+    def subset_partialselect(dataframe, restrictions):
+        '''
+        subsets a dataframe with a list of restrictions, then returns dataframe.
+        '''
+        nan = NAN()
+
+        def checkna(val):
+            # print(restrictions[val])
+            for i, key in enumerate(restrictions[val]):
+                if key == 'NA':
+                    restrictions[val][i] = nan
+                    return restrictions[val]
+            return restrictions[val]
+
+        for restr in restrictions:
+            restrictions[restr] = checkna(restr)
+            dataframe = dataframe[dataframe[restr].isin(restrictions[restr])]
+            print(restrictions[restr])
+        return dataframe
 
     @staticmethod
     def categorise_intdata(dataframe, column):
@@ -109,7 +150,9 @@ class utils:
         :return:
         """
         df = dataframe[features]
-        agg = df.groupby(features[1:]).agg('count')
+        fill = df[features[1::]].fillna('NA')
+        df = pd.DataFrame(df[features[0]]).join(fill)
+        agg = df.groupby(features[1::]).agg('count')
         index = agg.index
         grouplen = len(df)
         html = []
@@ -167,7 +210,10 @@ class utils:
                             agg[features[0]][group[levelindex]].sum()) + "</div></div>")
             unset = grouplen - total
             if start:
-                html.append("<div class='group-item'><div class='group-left'>No Value</div><div class='group-right'>" + str(unset) + "</div></div></div>")
+                html.append("<div class='group-bottom'><div class='group-left'>Filled datapoints</div><div class='group-right'>" + str(total) +
+                            "</div></div><div class='group-bottom'><div class='group-left'>Missing datapoints</div><div class='group-right'>" + str(unset) +
+                            "</div></div><div class='group-bottom'><div class='group-left'>Total datapoints</div><div class='group-right'>" + str(grouplen) +
+                            "</div></div> </div></div>")
             else:
                 html.append('</div>')
 
@@ -180,6 +226,13 @@ class utils:
 
     @staticmethod
     def limitedsubselect(features, limit=4):
+        '''
+        generates multiple lists of features of limit length from one list. The first 3 features are the same and the
+        4th feature unique.
+        :param features:
+        :param limit:
+        :return:
+        '''
         selections = []
         if len(features) > limit:
             print('in', features)
