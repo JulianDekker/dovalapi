@@ -67,6 +67,15 @@ class utils:
             print(restrictions[restr])
         return dataframe
 
+    def subset_full(self, dataframe, indexes, restrictions):
+        if len(indexes) > 0:
+            dataframe = dataframe.set_index(dataframe.columns[0])
+            dataframe = dataframe.loc[indexes, :]
+            dataframe = dataframe.reset_index()
+        if len(restrictions) > 0:
+            dataframe = self.subset_partialselect(dataframe, restrictions)
+        return dataframe
+
     @staticmethod
     def categorise_intdata(dataframe, column):
         '''
