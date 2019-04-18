@@ -86,8 +86,6 @@ class utils:
         '''
         uniqlen = len(dataframe[column].value_counts().sort_index())
         bins = int(np.round(uniqlen / 10))
-        if bins < 10:
-            bins = 10
         getcontext().prec = 4
         bins = pd.cut(dataframe[column], bins=bins, retbins=True)
 
