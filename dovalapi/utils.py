@@ -52,19 +52,21 @@ class utils:
         subsets a dataframe with a list of restrictions, then returns dataframe.
         '''
         nan = NAN()
-
-        def checkna(val):
-            # print(restrictions[val])
+        print(restrictions)
+        def checkvals(val):
+            print('restr', restrictions[val])
             for i, key in enumerate(restrictions[val]):
                 if key == 'NA':
                     restrictions[val][i] = nan
                     return restrictions[val]
+                if key == 'true' or key == 'false':
+                    restrictions[val][i] = (restrictions[val][i] in ['true'])
+            print(restrictions[val])
             return restrictions[val]
 
         for restr in restrictions:
-            restrictions[restr] = checkna(restr)
+            restrictions[restr] = checkvals(restr)
             dataframe = dataframe[dataframe[restr].isin(restrictions[restr])]
-            print(restrictions[restr])
         return dataframe
 
     def subset_full(self, dataframe, indexes, restrictions):
@@ -157,6 +159,11 @@ class utils:
         :return:
         """
         df = dataframe[features]
+        for feat in features:
+            if str(dataframe[feat].dtype).startswith('int'):
+                if len(df[feat].unique()) <= 3:
+                    df[feat] = df[feat].apply(lambda x: self.boolify(x))
+        print(df)
         fill = df[features[1::]].fillna('NA')
         df = pd.DataFrame(df[features[0]]).join(fill)
         agg = df.groupby(features[1::]).agg('count')
@@ -199,11 +206,11 @@ class utils:
             for levelindex, item in enumerate(group):
                 if len(features) > 2:
                     try:
-                        html.append("<div class='group-item'><div class='group-left'>" + item + "</div><div class='group-right'>" + str(
+                        html.append("<div class='group-item'><div class='group-left'>" + str(item) + "</div><div class='group-right'>" + str(
                             agg[features[0]][levelindexes[levelindex]].sum()) + "</div></div>")
                     except:
                         html.append(
-                            "<div class='group-item'><div class='group-left'>" + item + "</div><div class='group-right'>" + str(
+                            "<div class='group-item'><div class='group-left'>" + str(item) + "</div><div class='group-right'>" + str(
                                 0) + "</div></div>")
                     ind = get_next_ind(level)
                     if (ind is not None):
@@ -213,7 +220,7 @@ class utils:
                             continue
                 else:
                     html.append(
-                        "<div class='group-item'><div class='group-left'>" + item + "</div><div class='group-right'>" + str(
+                        "<div class='group-item'><div class='group-left'>" + str(item) + "</div><div class='group-right'>" + str(
                             agg[features[0]][group[levelindex]].sum()) + "</div></div>")
             unset = grouplen - total
             if start:
@@ -230,6 +237,12 @@ class utils:
             calc_level(index.levels[0])
 
         return ''.join(html)
+
+    @staticmethod
+    def boolify(bool):
+        if bool in [1, 0, '1', '0', 'yes', 'no', 'true', 'false', True, False]:
+            return bool in [1, '1', 'yes', 'true', True]
+        return bool
 
     @staticmethod
     def limitedsubselect(features, limit=4):
