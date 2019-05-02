@@ -49,21 +49,17 @@ class utils:
     @staticmethod
     def subset_partialselect(dataframe, restrictions):
         '''
-        subsets a dataframe with a list of restrictions, then returns dataframe.
+        subsets a dataframe with a dictionary of restrictions, then returns dataframe.
         '''
         nan = NAN()
-        print(restrictions)
         def checkvals(val):
-            print('restr', restrictions[val])
             for i, key in enumerate(restrictions[val]):
                 if key == 'NA':
                     restrictions[val][i] = nan
                     return restrictions[val]
                 if key == 'true' or key == 'false':
                     restrictions[val][i] = (restrictions[val][i] in ['true'])
-            print(restrictions[val])
             return restrictions[val]
-
         for restr in restrictions:
             restrictions[restr] = checkvals(restr)
             dataframe = dataframe[dataframe[restr].isin(restrictions[restr])]
@@ -150,7 +146,7 @@ class utils:
                                     aggfunc=aggfun)
         return pivottable
 
-    def hierarchical_pivottable(self, dataframe, features):
+    def hierarchical_pivottable(self, dataframe, features, notebookout=True):
         """
         Creates a hierarchical pivot table html strucuture. Recursively calculates the amounts of datapoints in each level
         of pivot.
@@ -158,12 +154,13 @@ class utils:
         :param features:
         :return:
         """
-        df = dataframe[features]
+        df = dataframe[features].copy()
         for feat in features:
             if str(dataframe[feat].dtype).startswith('int'):
-                if len(df[feat].unique()) <= 3:
-                    df[feat] = df[feat].apply(lambda x: self.boolify(x))
-        print(df)
+                if len(df[feat].unique()) <= 2:
+                    df.loc[:, feat] = df.loc[:, feat].apply(lambda x: self.boolify(x)) #df[feat] = df[feat].apply(lambda x: self.boolify(x)) #data.loc[:,features[0]] = data[features[0]]
+            if str(dataframe[feat].dtype).startswith('float'):
+                df.loc[:, feat] = df.loc[:, feat].apply(lambda x: str(x))#df[feat] = df[feat].apply(lambda x: str(x))
         fill = df[features[1::]].fillna('NA')
         df = pd.DataFrame(df[features[0]]).join(fill)
         agg = df.groupby(features[1::]).agg('count')
@@ -235,14 +232,35 @@ class utils:
             calc_level(index)
         else:
             calc_level(index.levels[0])
-
-        return ''.join(html)
+        if notebookout:
+            open('pageout.html', 'w')
+            with open('pageout.html', 'a') as f:
+                from IPython.display import IFrame
+                f.write("<script src='https://code.jquery.com/jquery-3.4.0.min.js'></script>")
+                f.write('<style>body{width: 100%; margin:0px;}*{box-sizing: border-box;}.d-table,.p-table{padding:0 0px 15px 0px;background:#fff;float:left;width:100%}.p-table p{float:left;width:100%;padding:15px 0 5px 0}.pivot-form{margin:15px 0;width:100%;float:left;border-top:1px solid #f5f5f5;border-bottom:1px solid #f5f5f5}.cat-group{float:left;width:100%;padding:5px 0 5px 30px;background:rgba(109,109,109,.1);display:none}.p-table>.cat-group{display:block}.group-title{border-bottom:1px solid #b1afaf;padding:5px 0;font-size:.8em}.group-item{padding:5px 30px;float:left;width:100%;background:rgba(255,255,255,.5);border-bottom:1px dotted #b9b9b9}.group-right{padding-right:30px;float:left;width:50%;text-align:right;}.group-left{float:left;width:50%}.group-item.collapsable{padding:5px 30px 5px 0;cursor:pointer}.collapsable .group-left:before{content:"=";float:left;transition:all .5s;padding:0 7.5px}.collapsable.collapsed .group-left:before{-webkit-transform:rotate(-90deg);-moz-transform:rotate(-90deg);transform:rotate(-90deg)}</style>')
+                f.write("<div class='p-table'>"+''.join(html)+"</div>")
+                f.write("<script>"
+                        "$('.group-item').on('click', function(){"
+                            "if ($(this).next().hasClass('cat-group')){"
+                                "$(this).next().toggle();"
+                                "$(this).toggleClass('collapsed')"
+                            "}"
+                        "});"
+                        "$('.group-item').each(function(){"
+                            "if ($(this).next().children().length > 2){"
+                                "console.log($(this).addClass('collapsable'))"
+                            "}"
+                        "});"
+                        "$('body').css({'width': '100%;', 'float': 'left'});</script>")
+            return display(IFrame('pageout.html', width=700, height=400))
+        else:
+            return ''.join(html)
 
     @staticmethod
     def boolify(bool):
         if bool in [1, 0, '1', '0', 'yes', 'no', 'true', 'false', True, False]:
             return bool in [1, '1', 'yes', 'true', True]
-        return bool
+        return str(bool)
 
     @staticmethod
     def limitedsubselect(features, limit=4):

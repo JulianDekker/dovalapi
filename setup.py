@@ -1,11 +1,13 @@
-from setuptools import setup
+#from setuptools import setup
+from distutils.core import setup
 
 setup(name='dovalapi',
-      version='1.5',
+      version='1.6',
       description='Doval methods and tools',
       url='',
       author='Julian Dekker',
-      author_email='s1100953@student.hsleiden.nl',
+      author_email='Mai.me@julian-dekker.nl',
       license='MIT',
       packages=['dovalapi'],
-      zip_safe=False)
+      include_package_data=True
+      )

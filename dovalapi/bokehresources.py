@@ -152,7 +152,6 @@ class BokehResources:
                     iindex = iindex + len(lower)+1
                     if iindex > 11:
                         iindex = iindex % 11
-                    print(iindex, iclas, len(lower))
                     lowerdf = lowerdf.append(pd.Series({'score': data7.loc[index]}, name='{} {}'.format(clas, index)))
                     quant3 = quant3.append(pd.Series({'score': q3[clas].loc[index]}, name='{} {}'.format(clas, index)))
                     quant2 = quant2.append(pd.Series({'score': q2[clas].loc[index]}, name='{} {}'.format(clas, index)))
