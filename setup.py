@@ -2,7 +2,7 @@
 from distutils.core import setup
 
 setup(name='dovalapi',
-      version='1.6',
+      version='2.0.0',
       description='Doval methods and tools',
       url='',
       author='Julian Dekker',
