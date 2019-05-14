@@ -5,14 +5,9 @@ from ipywidgets import Layout
 import json
 from pkg_resources import resource_string, resource_filename, set_extraction_path, cleanup_resources
 import pandas as pd
+import subprocess
 
 PATH = str(dovalapi.__file__)[:-11]+'lib/'
-
-JQUERY = "https://code.jquery.com/jquery-3.4.0.min.js"
-CANVASJS = "https://canvasxpress.org/js/canvasXpress.min.js"
-#CANVASJS = PATH+'canvasXpress.min-23.8.js'
-CANVASCSS = "https://canvasxpress.org/css/canvasXpress.css"
-
 
 class plotcanvas:
     def __init__(self, dataset, parameters, plottype='boxplot', additionalconfig={}):
@@ -23,6 +18,10 @@ class plotcanvas:
         self.supportedplots = ['boxplot', 'scatter', 'scatter2d', 'scatter3d', 'heatmap']
         self.filename = str(self.__repr__)[-18:-1]+'.html'
 
+        self.js = 'canvasXpress.min-23.8.js'
+        self.css = 'canvasXpress-23.8.css'
+        self.jquery = 'jquery-3.1.1.min.js'
+
         assert type(parameters) is list
         assert type(dataset) is pd.core.frame.DataFrame
         assert type(plottype) is str
@@ -31,22 +30,17 @@ class plotcanvas:
         self.plot_canvas()
 
     def plot_canvas(self):
-        #print(resource_string(__name__, 'lib/tmp.html'))
         if len(self.dataset) == 0 or len(self.keys) == 0:
             print("The input dataset or input parameters are empty.")
             return
         self.clean_inputs()
-        handle, path = tempfile.mkstemp()
         self.prepare_workspace()
-        #open(PATH+'tmp.html', 'w')
-        #print(str(resource_string(__name__, 'lib/canvasXpress.min-23.8.js')))
         open('canvasplots/'+self.filename, 'w')
         with open('canvasplots/'+self.filename, 'a') as f:
-        #with open(PATH+'tmp.html', 'a') as f:
             f.write("<head>"
-                    "<script src="+JQUERY+"></script>"
-                    "<script type=\"text/javascript\" src='"+CANVASJS+"'></script>"
-                    "<link rel=\"stylesheet\" href="+CANVASCSS+" type=\"text/css\">"
+                    "<script src="+self.jquery+"></script>"
+                    "<script type=\"text/javascript\" src='"+self.js+"'></script>"
+                    "<link rel=\"stylesheet\" href="+self.css+" type=\"text/css\">"
                     "</head>"
                     "<body>"
                     "<canvas id='canvas' responsive='true' width=200 height=200></canvas>"
@@ -55,8 +49,6 @@ class plotcanvas:
                     "</script>"
                     "</body>")
         return display(IFrame('canvasplots/'+self.filename, width=700, height=500, layout=Layout(width='50%', height="500px")))
-        #return display(
-        #    IFrame(PATH+'tmp.html', width=700, height=500, layout=Layout(width='50%', height="500px")))
 
     def make_y(self):
         datas = self.dataset.set_index(self.dataset.columns[0])
@@ -178,20 +170,29 @@ class plotcanvas:
 
     def prepare_workspace(self):
         try:
-            print()
-            resource_string(__name__, 'lib/tmp.html')(os.path.join(os.getcwd(), 'canvasplots'))
-            print(os.path.join(os.getcwd(), 'canvasplots'))
-            resource_filename('dovalapi', 'lib')
-            #print(dovalapi.__file__)
-            #str(resource_string(__name__, 'lib/canvasXpress.min-23.8.js'))
-        except:
-            print("No files found", os.getcwd(), os.listdir(os.getcwd()), )
-        try:
-            shutil.rmtree(os.path.join(os.path.curdir, 'canvasplots'))
+            os.mkdir(os.path.join(os.path.curdir, 'canvasplots'))
         except:
             pass
         finally:
             try:
-                os.mkdir(os.path.join(os.path.curdir, 'canvasplots'))
-            except:
+                os.rename(PATH + self.js, os.path.curdir + '\canvasplots\\'+self.js)
+            except FileExistsError:
                 pass
+            except FileNotFoundError:
+                self.js = "https://canvasxpress.org/js/canvasXpress.min.js"
+                print("Warning: Could not load canvas js.\nloading CanvasXpress js from: "+self.js+' instead.')
+            try:
+                os.rename(PATH + self.css, os.path.curdir + '\canvasplots\\' + self.css)
+            except FileExistsError:
+                pass
+            except FileNotFoundError:
+                self.css = "https://canvasxpress.org/css/canvasXpress.css"
+                print("Warning: Could not load canvas css.\nloading CanvasXpress css from: "+self.css+' instead.')
+            try:
+                os.rename(PATH + self.jquery, os.path.curdir + '\canvasplots\\' + self.jquery)
+            except FileExistsError:
+                pass
+            except FileNotFoundError:
+                self.jquery = "https://code.jquery.com/jquery-3.4.0.min.js"
+                print("Warning: Could not load Jquery.\nloading jquery from: "+self.jquery+' instead.')
+
