@@ -6,4 +6,4 @@ dovalapi\bokehresources.py
 dovalapi\canvasxpressresources.py
 dovalapi\test.py
 dovalapi\utils.py
-recursive-include dovalapi\lib *
+recursive-include dovalapi/lib *

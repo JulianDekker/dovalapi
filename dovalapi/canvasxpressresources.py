@@ -3,6 +3,16 @@ import dovalapi
 from IPython.display import IFrame
 from ipywidgets import Layout
 import json
+from pkg_resources import resource_string, resource_filename, set_extraction_path, cleanup_resources
+import pandas as pd
+
+PATH = str(dovalapi.__file__)[:-11]+'lib/'
+
+JQUERY = "https://code.jquery.com/jquery-3.4.0.min.js"
+CANVASJS = "https://canvasxpress.org/js/canvasXpress.min.js"
+#CANVASJS = PATH+'canvasXpress.min-23.8.js'
+CANVASCSS = "https://canvasxpress.org/css/canvasXpress.css"
+
 
 class plotcanvas:
     def __init__(self, dataset, parameters, plottype='boxplot', additionalconfig={}):
@@ -12,21 +22,31 @@ class plotcanvas:
         self.additionalconfig = additionalconfig
         self.supportedplots = ['boxplot', 'scatter', 'scatter2d', 'scatter3d', 'heatmap']
         self.filename = str(self.__repr__)[-18:-1]+'.html'
+
+        assert type(parameters) is list
+        assert type(dataset) is pd.core.frame.DataFrame
+        assert type(plottype) is str
+        assert type(additionalconfig) is dict
+
         self.plot_canvas()
 
     def plot_canvas(self):
+        #print(resource_string(__name__, 'lib/tmp.html'))
         if len(self.dataset) == 0 or len(self.keys) == 0:
             print("The input dataset or input parameters are empty.")
             return
         self.clean_inputs()
         handle, path = tempfile.mkstemp()
         self.prepare_workspace()
+        #open(PATH+'tmp.html', 'w')
+        #print(str(resource_string(__name__, 'lib/canvasXpress.min-23.8.js')))
         open('canvasplots/'+self.filename, 'w')
         with open('canvasplots/'+self.filename, 'a') as f:
+        #with open(PATH+'tmp.html', 'a') as f:
             f.write("<head>"
-                    "<script src='https://code.jquery.com/jquery-3.4.0.min.js'></script>"
-                    "<script type=\"text/javascript\" src=\"https://canvasxpress.org/js/canvasXpress.min.js\"></script>"
-                    "<link rel=\"stylesheet\" href=\"https://canvasxpress.org/css/canvasXpress.css\" type=\"text/css\">"
+                    "<script src="+JQUERY+"></script>"
+                    "<script type=\"text/javascript\" src='"+CANVASJS+"'></script>"
+                    "<link rel=\"stylesheet\" href="+CANVASCSS+" type=\"text/css\">"
                     "</head>"
                     "<body>"
                     "<canvas id='canvas' responsive='true' width=200 height=200></canvas>"
@@ -35,6 +55,8 @@ class plotcanvas:
                     "</script>"
                     "</body>")
         return display(IFrame('canvasplots/'+self.filename, width=700, height=500, layout=Layout(width='50%', height="500px")))
+        #return display(
+        #    IFrame(PATH+'tmp.html', width=700, height=500, layout=Layout(width='50%', height="500px")))
 
     def make_y(self):
         datas = self.dataset.set_index(self.dataset.columns[0])
@@ -155,6 +177,15 @@ class plotcanvas:
             self.type = self.type.capitalize()
 
     def prepare_workspace(self):
+        try:
+            print()
+            resource_string(__name__, 'lib/tmp.html')(os.path.join(os.getcwd(), 'canvasplots'))
+            print(os.path.join(os.getcwd(), 'canvasplots'))
+            resource_filename('dovalapi', 'lib')
+            #print(dovalapi.__file__)
+            #str(resource_string(__name__, 'lib/canvasXpress.min-23.8.js'))
+        except:
+            print("No files found", os.getcwd(), os.listdir(os.getcwd()), )
         try:
             shutil.rmtree(os.path.join(os.path.curdir, 'canvasplots'))
         except:
