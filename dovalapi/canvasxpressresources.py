@@ -10,14 +10,19 @@ import subprocess
 PATH = str(dovalapi.__file__)[:-11]+'lib/'
 
 class plotcanvas:
-    def __init__(self, dataset, parameters, plottype='boxplot', additionalconfig={}):
+    def __init__(self, dataset, parameters, plottype='boxplot', additionalconfig={}, foldername='canvasplots',
+                 folderlocation='', fig_name=None):
         self.dataset = dataset
         self.keys = parameters
         self.type = plottype.lower()
         self.additionalconfig = additionalconfig
         self.supportedplots = ['boxplot', 'scatter', 'scatter2d', 'scatter3d', 'heatmap']
-        self.filename = str(self.__repr__)[-18:-1]+'.html'
-
+        self.foldername = foldername
+        self.folderlocation = folderlocation
+        if fig_name is None:
+            self.filename = str(self.__repr__)[-18:-1]+'.html'
+        else:
+            self.filename = fig_name
         self.js = 'canvasXpress.min-23.8.js'
         self.css = 'canvasXpress-23.8.css'
         self.jquery = 'jquery-3.1.1.min.js'
@@ -35,8 +40,10 @@ class plotcanvas:
             return
         self.clean_inputs()
         self.prepare_workspace()
-        open('canvasplots/'+self.filename, 'w')
-        with open('canvasplots/'+self.filename, 'a') as f:
+        if self.foldername != '':
+            self.foldername = self.foldername+'/'
+        open(self.folderlocation+self.foldername+'/'+self.filename, 'w')
+        with open(self.folderlocation+self.foldername+'/'+self.filename, 'a') as f:
             f.write("<head>"
                     "<script src="+self.jquery+"></script>"
                     "<script type=\"text/javascript\" src='"+self.js+"'></script>"
@@ -48,7 +55,7 @@ class plotcanvas:
                     "x = new CanvasXpress('canvas', {y: "+self.make_y()+", x: "+self.make_x()+", z: "+self.make_z()+"}, "+self.make_styles()+", false);x.clickGraphMaxMin();"
                     "</script>"
                     "</body>")
-        return display(IFrame('canvasplots/'+self.filename, width=700, height=500, layout=Layout(width='50%', height="500px")))
+        return display(IFrame(self.folderlocation+self.foldername+self.filename, width=700, height=500, layout=Layout(width='50%', height="500px")))
 
     def make_y(self):
         datas = self.dataset.set_index(self.dataset.columns[0])
@@ -170,26 +177,26 @@ class plotcanvas:
 
     def prepare_workspace(self):
         try:
-            os.mkdir(os.path.join(os.path.curdir, 'canvasplots'))
+            os.mkdir(os.path.join(os.path.curdir, self.foldername))
         except:
             pass
         finally:
             try:
-                os.rename(PATH + self.js, os.path.curdir + '\canvasplots\\'+self.js)
+                os.rename(PATH + self.js, os.path.curdir + '/' + self.foldername+'/' + self.js)
             except FileExistsError:
                 pass
             except FileNotFoundError:
                 self.js = "https://canvasxpress.org/js/canvasXpress.min.js"
                 print("Warning: Could not load canvas js.\nloading CanvasXpress js from: "+self.js+' instead.')
             try:
-                os.rename(PATH + self.css, os.path.curdir + '\canvasplots\\' + self.css)
+                os.rename(PATH + self.css, os.path.curdir + '/' + self.foldername+'/' + self.css)
             except FileExistsError:
                 pass
             except FileNotFoundError:
                 self.css = "https://canvasxpress.org/css/canvasXpress.css"
                 print("Warning: Could not load canvas css.\nloading CanvasXpress css from: "+self.css+' instead.')
             try:
-                os.rename(PATH + self.jquery, os.path.curdir + '\canvasplots\\' + self.jquery)
+                os.rename(PATH + self.jquery, os.path.curdir + '/' + self.foldername + '/' + self.jquery)
             except FileExistsError:
                 pass
             except FileNotFoundError:
