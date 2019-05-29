@@ -65,14 +65,24 @@ class utils:
             dataframe = dataframe[dataframe[restr].isin(restrictions[restr])]
         return dataframe
 
-    def subset_full(self, dataframe, indexes, restrictions):
+    def subset_full(self, dataframe, indexes, restrictions, inverse=False):
+        refdf = dataframe
         if len(indexes) > 0:
             dataframe = dataframe.set_index(dataframe.columns[0])
             dataframe = dataframe.loc[indexes, :]
             dataframe = dataframe.reset_index()
         if len(restrictions) > 0:
             dataframe = self.subset_partialselect(dataframe, restrictions)
+        if inverse:
+            return self.inversedf(refdf, dataframe)
         return dataframe
+
+    @staticmethod
+    def inversedf(dataframe, inversedf):
+        inversed_df = dataframe.merge(inversedf, how='left', indicator=True)  # adds a new column '_merge'
+        inversed_df = inversed_df[(inversed_df['_merge'] == 'left_only')].copy()  # rows only in df1 and not df2
+        inversed_df = inversed_df.drop(columns='_merge').copy()
+        return inversed_df
 
     @staticmethod
     def categorise_intdata(dataframe, column):
