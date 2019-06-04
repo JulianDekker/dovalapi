@@ -65,11 +65,15 @@ class utils:
             dataframe = dataframe[dataframe[restr].isin(restrictions[restr])]
         return dataframe
 
-    def subset_full(self, dataframe, indexes, restrictions, inverse=False):
+    def subset_full(self, dataframe, indexes, restrictions, inverse=False, indextype=0):
         refdf = dataframe
-        if len(indexes) > 0:
+        if len(indexes) > 0 and indextype == 0:
             dataframe = dataframe.set_index(dataframe.columns[0])
             dataframe = dataframe.loc[indexes, :]
+            dataframe = dataframe.reset_index()
+        elif len(indexes) > 0 and indextype == 1:
+            dataframe = dataframe.set_index(dataframe.columns[0])
+            dataframe = dataframe.iloc[indexes, :]
             dataframe = dataframe.reset_index()
         if len(restrictions) > 0:
             dataframe = self.subset_partialselect(dataframe, restrictions)
