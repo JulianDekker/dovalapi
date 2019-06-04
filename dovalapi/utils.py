@@ -2,7 +2,7 @@ import re
 import pandas as pd
 import numpy as np
 from decimal import *
-
+import logging
 
 class NAN(object):
     def __eq__(self, v):
@@ -67,6 +67,7 @@ class utils:
 
     def subset_full(self, dataframe, indexes, restrictions, inverse=False, indextype=0):
         refdf = dataframe
+        logging.warning(indextype)
         if len(indexes) > 0 and indextype == 0:
             dataframe = dataframe.set_index(dataframe.columns[0])
             dataframe = dataframe.loc[indexes, :]
