@@ -176,13 +176,14 @@ class utils:
             if str(dataframe[feat].dtype).startswith('float'):
                 df.loc[:, feat] = df.loc[:, feat].apply(lambda x: str(x))#df[feat] = df[feat].apply(lambda x: str(x))
         fill = df[features[1::]].fillna('NA')
-        df = pd.DataFrame(df[features[0]]).join(fill)
+        df = pd.DataFrame(df[features[0]].apply(lambda x: self.fill_newnan(x))).join(fill)
+        grouplen = len(df)
+        df = df[df[features[0]] != 'NA']
         agg = df.groupby(features[1::]).agg('count')
         index = agg.index
-        grouplen = len(df)
         html = []
-
         #for i, feature in enumerate(features):
+
         #    if (dataframe[feature].dtype == 'int64' or dataframe[feature].dtype == 'float64') and i > 0:
         #        dataframe = self.categorise_intdata(dataframe, feature)
         #        features[i] += '_cat'
@@ -202,6 +203,7 @@ class utils:
             total = 0
             group = []
             levelindexes = []
+            nan = NAN()
             for i in level:
                 levelsindex = levelindex + (i,)
                 levelindexes.append(levelsindex)
@@ -296,3 +298,14 @@ class utils:
             return selections
         print('We need to go deeper!', features)
         return [features]
+
+    @staticmethod
+    def fill_newnan(x):
+        nan = NAN()
+        try:
+            if x == nan:
+                return x
+        except TypeError:
+            if x == 'nan':
+                return 'NA'
+        return x
