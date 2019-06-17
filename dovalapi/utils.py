@@ -287,14 +287,11 @@ class utils:
         '''
         selections = []
         if len(features) > limit:
-            print('in', features)
             for i in range(len(features) - limit):
                 feat = features[0:3]
                 feat.append(features[limit+i])
-                print('what happend?', feat)
                 selections.append(feat)
             return selections
-        print('We need to go deeper!', features)
         return [features]
 
     @staticmethod
