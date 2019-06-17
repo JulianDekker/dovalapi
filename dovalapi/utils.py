@@ -67,7 +67,6 @@ class utils:
 
     def subset_full(self, dataframe, indexes, restrictions, inverse=False, indextype=0):
         refdf = dataframe
-        print(indextype)
         if len(indexes) > 0 and indextype == 0:
             dataframe = dataframe.set_index(dataframe.columns[0])
             dataframe = dataframe.loc[indexes, :]
