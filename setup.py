@@ -4,7 +4,7 @@ from distutils.core import setup
 files = ['lib/*']
 
 setup(name='dovalapi',
-      version='2.2.2',
+      version='2.2.3',
       description='Doval methods and tools',
       url='',
       author='Julian Dekker',
