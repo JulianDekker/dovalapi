@@ -176,7 +176,7 @@ class utils:
         fill = df[features[1::]].fillna('NA')
         df = pd.DataFrame(df[features[0]].apply(lambda x: self.fill_newnan(x))).join(fill)
         grouplen = len(df)
-        df = df[df[features[0]] != 'NA']
+        df = df[df[features[0]].apply(lambda x: x != 'NA')]
         agg = df.groupby(features[1::]).agg('count')
         index = agg.index
         html = []
