@@ -10,7 +10,7 @@ import subprocess
 PATH = str(dovalapi.__file__)[:-11]+'lib/'
 
 class plotcanvas:
-    def __init__(self, dataset, parameters, plottype='boxplot', additionalconfig={}, foldername='canvasplots',
+    def __init__(self, dataset, parameters, plottype='boxplot', z_annot=None, additionalconfig={}, foldername='canvasplots',
                  folderlocation='', fig_name=None):
         self.dataset = dataset
         self.keys = parameters
@@ -19,6 +19,7 @@ class plotcanvas:
         self.supportedplots = ['boxplot', 'scatter', 'scatter2d', 'scatter3d', 'heatmap']
         self.foldername = foldername
         self.folderlocation = folderlocation
+        self.z_annot = z_annot
         if fig_name is None:
             self.filename = str(self.__repr__)[-18:-1]+'.html'
         else:
@@ -89,7 +90,10 @@ class plotcanvas:
         return json.dumps(annot)
 
     def make_z(self):
-        zannot = None
+        zannot = self.z_annot
+        if isinstance(zannot, list) and len(zannot) > 0:
+            zannot = {'annotation': self.z_annot}
+            return json.dumps(zannot)
         if self.type == 'Scatter2D' or self.type == 'Scatter3D':
             zannot = {}
             datas = self.dataset.set_index(self.dataset.columns[0])
