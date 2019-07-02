@@ -191,19 +191,19 @@ class plotcanvas:
                 pass
             except FileNotFoundError:
                 self.js = "https://canvasxpress.org/js/canvasXpress.min.js"
-                logging.warning("Warning: Could not load canvas js.\nloading CanvasXpress js from: "+self.js+' instead.')
+                #logging.warning("Warning: Could not load canvas js.\nloading CanvasXpress js from: "+self.js+' instead.')
             try:
                 os.rename(PATH + self.css, os.path.curdir + '/' + self.foldername+'/' + self.css)
             except FileExistsError:
                 pass
             except FileNotFoundError:
                 self.css = "https://canvasxpress.org/css/canvasXpress.css"
-                logging.warning("Warning: Could not load canvas css.\nloading CanvasXpress css from: "+self.css+' instead.')
+                #logging.warning("Warning: Could not load canvas css.\nloading CanvasXpress css from: "+self.css+' instead.')
             try:
                 os.rename(PATH + self.jquery, os.path.curdir + '/' + self.foldername + '/' + self.jquery)
             except FileExistsError:
                 pass
             except FileNotFoundError:
                 self.jquery = "https://code.jquery.com/jquery-3.4.0.min.js"
-                logging.warning("Warning: Could not load Jquery.\nloading jquery from: "+self.jquery+' instead.')
+                #logging.warning("Warning: Could not load Jquery.\nloading jquery from: "+self.jquery+' instead.')
 
